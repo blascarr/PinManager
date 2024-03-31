@@ -16,8 +16,8 @@ bool isSPI(PinType tag) { return (is_HSPI(tag) || is_HSPI(tag)); }
 
 template <typename BoardConfig>
 bool PinManager<BoardConfig>::attach(uint8_t gpio, bool output, PinType tag) {
-	if (!isPinOk(gpio, output) || (gpio >= BoardConfig::NUM_PINS) ||
-		isI2C(tag) || isSPI(tag)) {
+	if (!isPinOk(gpio) || (gpio >= BoardConfig::NUM_PINS) || isI2C(tag) ||
+		isSPI(tag)) {
 		return false;
 	}
 	if (isPinAttached(gpio)) {
@@ -27,24 +27,23 @@ bool PinManager<BoardConfig>::attach(uint8_t gpio, bool output, PinType tag) {
 	uint8_t pinIndex = gpio - 8 * pinLocation;
 	bitWrite(pinAlloc[pinLocation], pinIndex, true);
 	_pins[gpio] = tag;
-
 	return true;
 }
 
 template <typename BoardConfig>
-bool PinManager<BoardConfig>::detach(uint8_t gpio, PinType tag) {
+bool PinManager<BoardConfig>::detach(uint8_t gpio) {
 	if (gpio == 0xFF)
 		return true;
-	if (!isPinOk(gpio, false))
+	if (!isPinOk(gpio))
 		return false;
 
-	if ((_pins[gpio] != PinType::None) && (_pins[gpio] != tag)) {
+	if ((_pins[gpio] != PinType::None)) {
 		return false;
 	}
 
-	uint8_t by = gpio >> 3;
-	uint8_t bi = gpio - 8 * by;
-	bitWrite(pinAlloc[by], bi, false);
+	uint8_t pinLocation = gpio >> 3;
+	uint8_t pinIndex = gpio - 8 * pinLocation;
+	bitWrite(pinAlloc[pinLocation], pinIndex, false);
 	_pins[gpio] = PinType::None;
 	return true;
 }
@@ -60,7 +59,7 @@ bool PinManager<BoardConfig>::attach(const PinMode *pinArray,
 			// as this can greatly simplify configuration arrays
 			continue;
 		}
-		if (!isPinOk(gpio, pinArray[i].config.output)) {
+		if (!isPinOk(gpio)) {
 			shouldFail = true;
 		}
 		if (isI2C(tag) || isSPI(tag) && isPinAttached(gpio, tag)) {
@@ -146,7 +145,7 @@ bool PinManager<BoardConfig>::detach(const PinMode *pinArray,
 
 template <typename BoardConfig>
 bool PinManager<BoardConfig>::isPinAttached(uint8_t gpio, PinType tag) {
-	if (!isPinOk(gpio, false))
+	if (!isPinOk(gpio))
 		return true;
 	if ((tag != PinType::None) && (_pins[gpio] != tag))
 		return false;
@@ -158,16 +157,15 @@ bool PinManager<BoardConfig>::isPinAttached(uint8_t gpio, PinType tag) {
 }
 
 template <typename BoardConfig>
-bool PinManager<BoardConfig>::isPinOk(uint8_t gpio, bool output) {
-	return true;
+bool PinManager<BoardConfig>::isPinOk(uint8_t gpio) {
+	return !_pins[gpio].isBroken;
 }
 
 template <typename BoardConfig>
 PinType PinManager<BoardConfig>::getPinType(uint8_t gpio) {
 	if (gpio >= BoardConfig::NUM_PINS)
 		return PinType::None; // catch error case, to avoid array out-of-bounds
-							  // access
-	if (!isPinOk(gpio, false))
+	if (!isPinOk(gpio))
 		return PinType::None;
-	return _pins[gpio];
+	return _pins[gpio].type;
 }

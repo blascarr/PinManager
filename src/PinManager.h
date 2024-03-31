@@ -55,7 +55,7 @@ struct InputPin {
 };
 
 struct PinMode {
-	int8_t pin;
+	uint8_t pin;
 	GPIOMode mode = GPIOMode::Undefined;
 	union {
         InputPin input;
@@ -63,8 +63,9 @@ struct PinMode {
     } config;
 	bool isBroken = false;
 	PinType type;
-	PinMode(int8_t pin, OutputPin& isOutput, PinType type):pin(pin), config{.output = isOutput},mode(GPIOMode::Output),type( type ){};
-	PinMode(int8_t pin, InputPin& isInput, PinType type):pin(pin),config{.input = isInput},mode(GPIOMode::Input),type( type ){};
+	PinMode() : pin(0),config{.input = InputPin()} , type(PinType::None) {};
+	PinMode(uint8_t pin, OutputPin isOutput, PinType type):pin(pin), config{.output = isOutput},mode(GPIOMode::Output),type( type ){};
+	PinMode(uint8_t pin, InputPin isInput, PinType type):pin(pin),config{.input = isInput},mode(GPIOMode::Input),type( type ){};
 	void setBrokenPin(bool isBroken) {
         isBroken = isBroken;
 	};
@@ -79,11 +80,12 @@ struct ESP_PinMode : public PinMode {
 	bool isTouchGPIO = false;
 	bool isADC = false;
 	bool isDAC = false;
-	ESP_PinMode(int8_t pin, OutputPin& isOutput, PinType type, 
+	ESP_PinMode() : PinMode() {};
+	ESP_PinMode(uint8_t pin, OutputPin isOutput, PinType type, 
                bool canDeepSleep, bool canUseWithWiFi)
     : PinMode(pin, isOutput, type), 
       canDeepSleep(canDeepSleep), canUseWithWiFi(canUseWithWiFi) {}
-	ESP_PinMode(int8_t pin, InputPin& isInput, PinType type, 
+	ESP_PinMode(uint8_t pin, InputPin isInput, PinType type, 
                bool canDeepSleep, bool canUseWithWiFi)
     : PinMode(pin, isInput, type), 
       canDeepSleep(canDeepSleep), canUseWithWiFi(canUseWithWiFi) {}
@@ -96,15 +98,12 @@ class IPinManager {
 	virtual bool attach(uint8_t gpio, bool output, PinType tag) = 0;
 	virtual bool attach(const PinMode *pinArray, uint8_t arrayElementCount,
 						PinType tag);
-	virtual bool detach(uint8_t gpio, PinType tag);
 	virtual bool detach(const uint8_t *pinArray, uint8_t arrayElementCount,
 						PinType tag);
 	virtual bool detach(const PinMode *pinArray, uint8_t arrayElementCount,
 						PinType tag);
-	inline void detach(uint8_t gpio) { detach(gpio, PinType::None); }
-
 	virtual bool isPinAttached(uint8_t gpio, PinType tag = PinType::None) = 0;
-	virtual bool isPinOk(uint8_t gpio, bool output = true) = 0;
+	virtual bool isPinOk(uint8_t gpio) = 0;
 	virtual PinType getPinType(uint8_t gpio) = 0;
 };
 
@@ -112,8 +111,7 @@ template <typename BoardConfig>
 
 class PinManager : public IPinManager {
   private:
-	PinType _pins[BoardConfig::NUM_PINS] = {
-		PinType::None}; // Initialize to PinType:None
+	PinMode _pins[BoardConfig::NUM_PINS]; // Initialize to PinType:None
 	uint8_t pinAlloc[(BoardConfig::NUM_PINS + 7) / 8];
 	// if NUM_PINS = 7, 56bit, 1 bit per pin
 
@@ -131,14 +129,14 @@ class PinManager : public IPinManager {
 	bool attach(uint8_t gpio, bool output, PinType tag) override;
 	bool attach(const PinMode *pinArray, uint8_t arrayElementCount,
 				PinType tag) override;
-	bool detach(uint8_t gpio, PinType tag) override;
+	bool detach(uint8_t gpio) override;
 	bool detach(const uint8_t *pinArray, uint8_t arrayElementCount,
 				PinType tag) override;
 	bool detach(const PinMode *pinArray, uint8_t arrayElementCount,
 				PinType tag) override;
 
 	bool isPinAttached(uint8_t gpio, PinType tag = PinType::None) override;
-	virtual bool isPinOk(uint8_t gpio, bool output = true);
+	virtual bool isPinOk(uint8_t gpio);
 	PinType getPinType(uint8_t gpio) override;
 };
 
