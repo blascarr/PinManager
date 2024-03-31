@@ -1,9 +1,23 @@
 #include "PinManager.h"
 
+bool isI2C(PinType tag) {
+	return (tag == PinType::HW_I2C_SDA || tag == PinType::HW_I2C_SCL);
+};
+
+bool is_HSPI(PinType tag) {
+	return (tag == PinType::HSPI_MISO || tag == PinType::HSPI_MOSI ||
+			tag == PinType::HSPI_CLK || tag == PinType::HSPI_CS);
+}
+bool is_VSPI(PinType tag) {
+	return (tag == PinType::VSPI_MISO || tag == PinType::VSPI_MOSI ||
+			tag == PinType::VSPI_CLK || tag == PinType::VSPI_CS);
+}
+bool isSPI(PinType tag) { return (is_HSPI(tag) || is_HSPI(tag)); }
+
 template <typename BoardConfig>
 bool PinManager<BoardConfig>::attach(uint8_t gpio, bool output, PinType tag) {
 	if (!isPinOk(gpio, output) || (gpio >= BoardConfig::NUM_PINS) ||
-		tag == PinType::HW_I2C || tag == PinType::HW_SPI) {
+		isI2C(tag) || isSPI(tag)) {
 		return false;
 	}
 	if (isPinAttached(gpio)) {
@@ -46,11 +60,10 @@ bool PinManager<BoardConfig>::attach(const PinMode *pinArray,
 			// as this can greatly simplify configuration arrays
 			continue;
 		}
-		if (!isPinOk(gpio, pinArray[i].isOutput)) {
+		if (!isPinOk(gpio, pinArray[i].config.output)) {
 			shouldFail = true;
 		}
-		if ((tag == PinType::HW_I2C || tag == PinType::HW_SPI) &&
-			isPinAttached(gpio, tag)) {
+		if (isI2C(tag) || isSPI(tag) && isPinAttached(gpio, tag)) {
 			// allow multiple "allocations" of HW I2C & SPI bus pins
 			continue;
 		} else if (isPinAttached(gpio)) {
@@ -60,9 +73,9 @@ bool PinManager<BoardConfig>::attach(const PinMode *pinArray,
 	if (shouldFail) {
 		return false;
 	}
-	if (tag == PinType::HW_I2C)
+	if (tisI2C(tag))
 		i2cAllocCount++;
-	if (tag == PinType::HW_SPI)
+	if (isSPI(tag))
 		spiAllocCount++;
 	// all pins are available .. track each one
 	for (int i = 0; i < arrayElementCount; i++) {
@@ -104,13 +117,13 @@ bool PinManager<BoardConfig>::detach(const uint8_t *pinArray,
 	if (shouldFail) {
 		return false; // no pins deallocated
 	}
-	if (tag == PinType::HW_I2C) {
+	if (isI2C(tag)) {
 		if (i2cAllocCount && --i2cAllocCount > 0) {
 			// no deallocation done until last owner releases pins
 			return true;
 		}
 	}
-	if (tag == PinType::HW_SPI) {
+	if (isSPI(tag)) {
 		if (spiAllocCount && --spiAllocCount > 0) {
 			// no deallocation done until last owner releases pins
 			return true;
