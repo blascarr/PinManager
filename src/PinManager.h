@@ -93,13 +93,15 @@ struct ESP_PinMode : public PinMode {
 	bool isTouchGPIO = false;
 	ESP_PinMode() : PinMode(){};
 	ESP_PinMode(uint8_t pin, OutputPin isOutput, PinType type,
-				bool canDeepSleep, bool canUseWithWiFi, bool isBroken = false)
+				bool canDeepSleep = false, bool canUseWithWiFi = true,
+				bool isBroken = false)
 		: PinMode(pin, isOutput, type), canDeepSleep(canDeepSleep),
 		  canUseWithWiFi(canUseWithWiFi) {
 		this->isBroken = isBroken;
 	}
-	ESP_PinMode(uint8_t pin, InputPin isInput, PinType type, bool canDeepSleep,
-				bool canUseWithWiFi, bool isBroken = false)
+	ESP_PinMode(uint8_t pin, InputPin isInput, PinType type,
+				bool canDeepSleep = false, bool canUseWithWiFi = true,
+				bool isBroken = false)
 		: PinMode(pin, isInput, type), canDeepSleep(canDeepSleep),
 		  canUseWithWiFi(canUseWithWiFi) {
 		this->isBroken = isBroken;
