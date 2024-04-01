@@ -121,11 +121,11 @@ class IPinManager {
 	virtual bool isPinOK(uint8_t gpio) = 0;
 	virtual PinType getPinType(uint8_t gpio) = 0;
 };
-template <typename BoardConfig>
+template <typename BoardConfig, typename PinModeConf = PinMode>
 
 class PinManager : public IPinManager {
   protected:
-	PinMode _pins[BoardConfig::NUM_PINS];
+	PinModeConf _pins[BoardConfig::NUM_PINS];
 	uint8_t pinAlloc[(BoardConfig::NUM_PINS + 7) / 8];
 
 	struct {
@@ -221,7 +221,7 @@ class PinManager : public IPinManager {
 		uint8_t pinLocation = gpio >> 3;
 		uint8_t pinIndex = gpio - 8 * pinLocation;
 		bitWrite(pinAlloc[pinLocation], pinIndex, false);
-		_pins[gpio] = PinMode();
+		_pins[gpio] = PinModeConf();
 		return true;
 	};
 	bool detach(const uint8_t *pinArray, uint8_t arrayElementCount,
