@@ -100,6 +100,7 @@ class IPinManager {
 						PinType tag);
 	virtual bool detach(const uint8_t *pinArray, uint8_t arrayElementCount,
 						PinType tag);
+	virtual bool detach(uint8_t gpio);
 	virtual bool detach(const PinMode *pinArray, uint8_t arrayElementCount,
 						PinType tag);
 	virtual bool isPinAttached(uint8_t gpio, PinType tag = PinType::None) = 0;
@@ -129,7 +130,7 @@ class PinManager : public IPinManager {
 	bool attach(uint8_t gpio, bool output, PinType tag) override;
 	bool attach(const PinMode *pinArray, uint8_t arrayElementCount,
 				PinType tag) override;
-	bool detach(uint8_t gpio) override;
+	bool detach(uint8_t gpio);
 	bool detach(const uint8_t *pinArray, uint8_t arrayElementCount,
 				PinType tag) override;
 	bool detach(const PinMode *pinArray, uint8_t arrayElementCount,
