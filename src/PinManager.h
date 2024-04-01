@@ -157,7 +157,7 @@ class PinManager : public IPinManager {
 		uint8_t pinLocation = gpio >> 3;
 		uint8_t pinIndex = gpio - 8 * pinLocation;
 		bitWrite(pinAlloc[pinLocation], pinIndex, true);
-		_pins[getGPIOInList(gpio)] = {gpio, OutputPin(false), tag};
+		_pins[gpio] = {gpio, OutputPin(false), tag};
 		return true;
 	};
 
@@ -203,7 +203,7 @@ class PinManager : public IPinManager {
 			uint8_t by = gpio >> 3;
 			uint8_t bi = gpio - 8 * by;
 			bitWrite(pinAlloc[by], bi, true);
-			_pins[getGPIOInList(gpio)] = {gpio, OutputPin(false), tag};
+			_pins[gpio] = {gpio, OutputPin(false), tag};
 		}
 		return true;
 	};
@@ -214,14 +214,14 @@ class PinManager : public IPinManager {
 		if (!isPinOK(gpio))
 			return false;
 
-		if ((_pins[getGPIOInList(gpio)].type != PinType::None)) {
+		if ((_pins[gpio].type != PinType::None)) {
 			return false;
 		}
 
 		uint8_t pinLocation = gpio >> 3;
 		uint8_t pinIndex = gpio - 8 * pinLocation;
 		bitWrite(pinAlloc[pinLocation], pinIndex, false);
-		_pins[getGPIOInList(gpio)] = PinMode();
+		_pins[gpio] = PinMode();
 		return true;
 	};
 	bool detach(const uint8_t *pinArray, uint8_t arrayElementCount,
