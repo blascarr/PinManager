@@ -127,7 +127,7 @@ class PinManager : public IPinManager {
 
   public:
 	PinManager() : i2cAllocCount(0), spiAllocCount(0) {}
-	bool attach(uint8_t gpio, bool output, PinType tag) override;
+	bool attach(uint8_t gpio, bool output, PinType tag);
 	bool attach(const PinMode *pinArray, uint8_t arrayElementCount,
 				PinType tag) override;
 	bool detach(uint8_t gpio);
@@ -137,7 +137,7 @@ class PinManager : public IPinManager {
 				PinType tag) override;
 
 	bool isPinAttached(uint8_t gpio, PinType tag = PinType::None) override;
-	virtual bool isPinOk(uint8_t gpio);
+	bool isPinOk(uint8_t gpio);
 	PinType getPinType(uint8_t gpio) override;
 };
 
