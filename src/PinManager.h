@@ -22,14 +22,14 @@ enum struct PinType : uint8_t {
 	DMX = 0x8A,		   // 'DMX'  == hard-coded to IO2
 	HW_I2C_SDA = 0x8B, // 'I2C'  == hardware I2C pins
 	HW_I2C_SCL = 0x8C, // 'SPI' hardware(H) Virtual (V)SPI pins
-	HSPI_MISO = 0x8C,
-	HSPI_MOSI = 0x8D,
-	HSPI_CLK = 0x8E,
-	HSPI_CS = 0x8F,
-	VSPI_MISO = 0x91,
-	VSPI_MOSI = 0x92,
-	VSPI_CLK = 0x93,
-	VSPI_CS = 0x94,
+	HSPI_MISO = 0x8D,
+	HSPI_MOSI = 0x8E,
+	HSPI_CLK = 0x8F,
+	HSPI_CS = 0x91,
+	VSPI_MISO = 0x92,
+	VSPI_MOSI = 0x93,
+	VSPI_CLK = 0x94,
+	VSPI_CS = 0x95,
 };
 
 static_assert(0u == static_cast<uint8_t>(PinType::None),
