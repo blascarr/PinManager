@@ -21,6 +21,7 @@ const ESP_PinMode ESP32WROOM_BoardConf::PINOUT[ESP32WROOM_BoardConf::NUM_PINS] =
 	 {7, OutputPin(false), PinType::BusDigital, false, true, true},
 	 {8, OutputPin(false), PinType::BusDigital, false, true, true},
 	 {9, OutputPin(false), PinType::BusPWM, false, true, true},
+	 {10, OutputPin(false), PinType::BusPWM, false, true, true},
 	 {11, OutputPin(false), PinType::BusDigital, false, true, true},
 	 {12, OutputPin(false), PinType::HSPI_MISO, true, true},
 	 {13, OutputPin(false), PinType::HSPI_MOSI, true, true},
