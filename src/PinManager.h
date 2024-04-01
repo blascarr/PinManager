@@ -118,7 +118,7 @@ class IPinManager {
 	virtual bool detach(const PinMode *pinArray, uint8_t arrayElementCount,
 						PinType tag);
 	virtual bool isPinAttached(uint8_t gpio, PinType tag = PinType::None) = 0;
-	virtual bool isPinOk(uint8_t gpio) = 0;
+	virtual bool isPinOK(uint8_t gpio) = 0;
 	virtual PinType getPinType(uint8_t gpio) = 0;
 };
 template <typename BoardConfig>
@@ -141,7 +141,7 @@ class PinManager : public IPinManager {
   public:
 	PinManager() : i2cAllocCount(0), spiAllocCount(0) {}
 	bool attach(uint8_t gpio, bool output, PinType tag) {
-		if (!isPinOk(gpio) || (gpio >= BoardConfig::NUM_PINS) || isI2C(tag) ||
+		if (!isPinOK(gpio) || (gpio >= BoardConfig::NUM_PINS) || isI2C(tag) ||
 			isSPI(tag)) {
 			return false;
 		}
@@ -165,7 +165,7 @@ class PinManager : public IPinManager {
 				// as this can greatly simplify configuration arrays
 				continue;
 			}
-			if (!isPinOk(gpio)) {
+			if (!isPinOK(gpio)) {
 				shouldFail = true;
 			}
 			if (isI2C(tag) || isSPI(tag) && isPinAttached(gpio, tag)) {
@@ -205,7 +205,7 @@ class PinManager : public IPinManager {
 	bool detach(uint8_t gpio) {
 		if (gpio == 0xFF)
 			return true;
-		if (!isPinOk(gpio))
+		if (!isPinOK(gpio))
 			return false;
 
 		if ((_pins[gpio].type != PinType::None)) {
@@ -264,7 +264,7 @@ class PinManager : public IPinManager {
 	};
 
 	bool isPinAttached(uint8_t gpio, PinType tag = PinType::None) override {
-		if (!isPinOk(gpio))
+		if (!isPinOK(gpio))
 			return true;
 		if ((tag != PinType::None) && (_pins[gpio].type != tag))
 			return false;
@@ -275,12 +275,12 @@ class PinManager : public IPinManager {
 		uint8_t pinIndex = gpio - (pinLocation << 3);
 		return bitRead(pinAlloc[pinLocation], pinIndex);
 	};
-	bool isPinOk(uint8_t gpio) { return !_pins[gpio].isBroken; };
+	bool isPinOK(uint8_t gpio) { return !_pins[gpio].isBroken; };
 	PinType getPinType(uint8_t gpio) override {
 		if (gpio >= BoardConfig::NUM_PINS)
 			return PinType::None; // catch error case, to avoid array
 								  // out-of-bounds
-		if (!isPinOk(gpio))
+		if (!isPinOK(gpio))
 			return PinType::None;
 		return _pins[gpio].type;
 	};
