@@ -124,22 +124,27 @@ class IPinManager {
 template <typename BoardConfig>
 
 class PinManager : public IPinManager {
-  private:
-	PinMode _pins[BoardConfig::NUM_PINS]; // Initialize to PinType:None
+  protected:
+	PinMode _pins[BoardConfig::NUM_PINS];
 	uint8_t pinAlloc[(BoardConfig::NUM_PINS + 7) / 8];
-	// if NUM_PINS = 7, 56bit, 1 bit per pin
 
 	struct {
-		uint8_t i2cAllocCount
+		uint8_t I2CAllocCount
 			: I2C_NUM_DEVICES; // allow multiple allocation of I2C bus pins
 							   // but keep track of allocations
-		uint8_t spiAllocCount
+		uint8_t SPIAllocCount
 			: SPI_NUM_DEVICES; // allow multiple allocation of SPI bus pins
 							   // but keep track of allocations
 	};
 
   public:
-	PinManager() : i2cAllocCount(0), spiAllocCount(0) {}
+	PinManager() : I2CAllocCount(0), SPIAllocCount(0) {
+		for (size_t i = 0; i < BoardConfig::NUM_PINS; ++i) {
+			const auto &pinConfig = BoardConfig::PINOUT[i];
+			_pins[i] = pinConfig;
+		}
+	}
+	uint8_t getPin(uint8_t gpio) { return _pins[gpio].pin; }
 	bool attach(uint8_t gpio, bool output, PinType tag) {
 		if (!isPinOK(gpio) || (gpio >= BoardConfig::NUM_PINS) || isI2C(tag) ||
 			isSPI(tag)) {
@@ -179,9 +184,9 @@ class PinManager : public IPinManager {
 			return false;
 		}
 		if (isI2C(tag))
-			i2cAllocCount++;
+			I2CAllocCount++;
 		if (isSPI(tag))
-			spiAllocCount++;
+			SPIAllocCount++;
 		// all pins are available .. track each one
 		for (int i = 0; i < arrayElementCount; i++) {
 			uint8_t gpio = pinArray[i].pin;
@@ -239,13 +244,13 @@ class PinManager : public IPinManager {
 			return false; // no pins deallocated
 		}
 		if (isI2C(tag)) {
-			if (i2cAllocCount && --i2cAllocCount > 0) {
+			if (I2CAllocCount && --I2CAllocCount > 0) {
 				// no deallocation done until last owner releases pins
 				return true;
 			}
 		}
 		if (isSPI(tag)) {
-			if (spiAllocCount && --spiAllocCount > 0) {
+			if (SPIAllocCount && --SPIAllocCount > 0) {
 				// no deallocation done until last owner releases pins
 				return true;
 			}
