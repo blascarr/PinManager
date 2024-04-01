@@ -111,14 +111,11 @@ struct ESP_PinMode : public PinMode {
 class IPinManager {
   public:
 	virtual ~IPinManager() {}
-	virtual bool attach(uint8_t gpio, bool output, PinType tag) = 0;
-	virtual bool attach(const PinMode *pinArray, uint8_t arrayElementCount,
-						PinType tag);
-	virtual bool detach(const uint8_t *pinArray, uint8_t arrayElementCount,
-						PinType tag);
+	virtual bool attach(PinMode pin) = 0;
+	virtual bool attach(const PinMode *pinArray, uint8_t arrayElementCount);
+	virtual bool detach(const uint8_t *pinArray, uint8_t arrayElementCount);
 	virtual bool detach(uint8_t gpio);
-	virtual bool detach(const PinMode *pinArray, uint8_t arrayElementCount,
-						PinType tag);
+	virtual bool detach(const PinMode *pinArray, uint8_t arrayElementCount );
 	virtual bool isPinAttached(uint8_t gpio, PinType tag = PinType::None) = 0;
 	virtual bool isPinOK(uint8_t gpio) = 0;
 	virtual PinType getPinType(uint8_t gpio) = 0;
@@ -139,156 +136,77 @@ class PinManager : public IPinManager {
 							   // but keep track of allocations
 	};
 
+	void gpioWrite(uint8_t gpio, bool status = false){
+		uint8_t pinLocation = gpio >> 3;
+		uint8_t pinIndex = gpio - 8 * pinLocation;
+		bitWrite(pinAlloc[pinLocation], pinIndex, status);
+	}
+	bool pinNotSupported(uint8_t gpio){
+		if (gpio >= BoardConfig::NUM_PINS)
+			return true;
+		return false;
+	}
   public:
 	PinManager() : I2CAllocCount(0), SPIAllocCount(0) {
 		for (size_t i = 0; i < BoardConfig::NUM_PINS; ++i) {
 			const auto &pinConfig = BoardConfig::PINOUT[i];
-			// _pins[i] = pinConfig;
 			attach(pinConfig);
 		}
 	}
 	uint8_t getGPIOInList(uint8_t gpio) { return (gpio + 1); };
 	uint8_t getPin(uint8_t gpio) { return _pins[gpio].pin; }
+	
 	bool attach(PinModeConf pinConfig) {
 		if (isPinAttached(pinConfig.pin)) {
 			return false;
 		}
 		uint8_t gpio = pinConfig.pin;
-		uint8_t pinLocation = gpio >> 3;
-		uint8_t pinIndex = gpio - 8 * pinLocation;
-		bitWrite(pinAlloc[pinLocation], pinIndex, true);
+		gpioWrite(gpio, true);
 		_pins[gpio] = pinConfig;
 		return true;
 	}
-	bool attach(uint8_t gpio, bool output, PinType tag) {
-		if (isPinAttached(gpio) || (gpio >= BoardConfig::NUM_PINS) ||
-			!isPinOK(gpio) || isI2C(tag) || isSPI(tag)) {
-			return false;
-		}
-		uint8_t pinLocation = gpio >> 3;
-		uint8_t pinIndex = gpio - 8 * pinLocation;
-		bitWrite(pinAlloc[pinLocation], pinIndex, true);
-		_pins[gpio] = {gpio, OutputPin(false), tag};
-		return true;
-	};
-
-	bool attach(const PinMode *pinArray, uint8_t arrayElementCount,
-				PinType tag) override {
-		bool shouldFail = false;
-		for (int i = 0; i < arrayElementCount; i++) {
-			uint8_t gpio = pinArray[i].pin;
-			if (gpio == 0xFF) {
-				// explicit support for io -1 as a no-op (no allocation of pin),
-				// as this can greatly simplify configuration arrays
-				continue;
-			}
-			if (!isPinOK(gpio)) {
-				shouldFail = true;
-			}
-			if (isI2C(tag) || isSPI(tag) && isPinAttached(gpio, tag)) {
-				// allow multiple "allocations" of HW I2C & SPI bus pins
-				continue;
-			} else if (isPinAttached(gpio)) {
-				shouldFail = true;
-			}
-		}
-		if (shouldFail) {
-			return false;
-		}
-		if (isI2C(tag))
-			I2CAllocCount++;
-		if (isSPI(tag))
-			SPIAllocCount++;
-		// all pins are available .. track each one
-		for (int i = 0; i < arrayElementCount; i++) {
-			uint8_t gpio = pinArray[i].pin;
-			if (gpio == 0xFF) {
-				// allow callers to include -1 value as non-requested pin
-				// as this can greatly simplify configuration arrays
-				continue;
-			}
-			if (gpio >= BoardConfig::NUM_PINS)
-				continue; // other unexpected GPIO => avoid array bounds
-						  // violation
-
-			uint8_t pinLocation = gpio >> 3;
-			uint8_t pinIndex = gpio - 8 * pinLocation;
-			bitWrite(pinAlloc[pinLocation], pinIndex, true);
-			_pins[gpio] = {gpio, OutputPin(false), tag};
-		}
-		return true;
-	};
 
 	bool detach(uint8_t gpio) {
-		if (gpio >= BoardConfig::NUM_PINS)
-			return false;
-		uint8_t pinLocation = gpio >> 3;
-		uint8_t pinIndex = gpio - 8 * pinLocation;
-		bitWrite(pinAlloc[pinLocation], pinIndex, false);
+		if (pinNotSupported(gpio)) return false;
+		gpioWrite(gpio, false);
 		_pins[gpio] = PinModeConf();
 		return true;
 	};
 
-	bool detach(const uint8_t *pinArray, uint8_t arrayElementCount,
-				PinType tag) override {
-		bool shouldFail = false;
+	bool attach(const PinModeConf *pinArray, uint8_t arrayElementCount) override {
 		for (int i = 0; i < arrayElementCount; i++) {
-			uint8_t gpio = pinArray[i];
-			if (gpio == 0xFF) {
-				// explicit support for io -1 as a no-op (no allocation of pin),
-				// as this can greatly simplify configuration arrays
-				continue;
-			}
-			if (isPinAttached(gpio, tag)) {
-				// if the current pin is allocated by selected owner it is
-				// possible to release it
-				continue;
-			}
-			shouldFail = true;
+			PinModeConf pinConfig = pinArray[i];
+			attach( pinConfig );
 		}
-		if (shouldFail) {
-			return false; // no pins deallocated
-		}
-		if (isI2C(tag)) {
-			if (I2CAllocCount && --I2CAllocCount > 0) {
-				// no deallocation done until last owner releases pins
-				return true;
-			}
-		}
-		if (isSPI(tag)) {
-			if (SPIAllocCount && --SPIAllocCount > 0) {
-				// no deallocation done until last owner releases pins
-				return true;
-			}
-		}
+		return true;
+	};
+
+	bool detach(const PinModeConf *pinArray, uint8_t arrayElementCount) override {
 		for (int i = 0; i < arrayElementCount; i++) {
+			detach(pinArray[i].pin);
+		}
+		return true;
+	};
+
+	bool detach(const uint8_t *pinArray, uint8_t arrayElementCount) override {
+		uint8_t pins[arrayElementCount];
+		for (int i = 0; i < arrayElementCount; i++){
 			detach(pinArray[i]);
 		}
 		return true;
 	};
-	bool detach(const PinMode *pinArray, uint8_t arrayElementCount,
-				PinType tag) override {
-		uint8_t pins[arrayElementCount];
-		for (int i = 0; i < arrayElementCount; i++)
-			pins[i] = pinArray[i].pin;
-		return detach(pins, arrayElementCount, tag);
-	};
 
 	bool isPinAttached(uint8_t gpio, PinType tag = PinType::None) override {
-		if (gpio >= BoardConfig::NUM_PINS ||
+		if ( pinNotSupported(gpio) ||
 			((tag != PinType::None) && (_pins[gpio].type != tag)))
 			return false;
-		if (!isPinOK(gpio))
-			return true;
 		uint8_t pinLocation = gpio >> 3;
 		uint8_t pinIndex = gpio - (pinLocation << 3);
 		return bitRead(pinAlloc[pinLocation], pinIndex);
 	};
 	bool isPinOK(uint8_t gpio) { return !_pins[gpio].isBroken; };
 	PinType getPinType(uint8_t gpio) override {
-		if (gpio >= BoardConfig::NUM_PINS)
-			return PinType::None; // avoid out-of-bounds
-		if (!isPinOK(gpio))
+		if ( pinNotSupported(gpio) || !isPinOK(gpio) )
 			return PinType::None;
 		return _pins[gpio].type;
 	};
