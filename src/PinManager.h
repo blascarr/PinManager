@@ -136,7 +136,7 @@ class PinManager : public IPinManager {
 							   // but keep track of allocations
 	};
 
-	void gpioWrite(uint8_t gpio, bool status = false){
+	void gpioBitWrite(uint8_t gpio, bool status = false){
 		uint8_t pinLocation = gpio >> 3;
 		uint8_t pinIndex = gpio - 8 * pinLocation;
 		bitWrite(pinAlloc[pinLocation], pinIndex, status);
@@ -155,33 +155,33 @@ class PinManager : public IPinManager {
 	}
 	uint8_t getGPIOInList(uint8_t gpio) { return (gpio + 1); };
 	uint8_t getPin(uint8_t gpio) { return _pins[gpio].pin; }
-	
 	bool attach(PinModeConf pinConfig) {
 		if (isPinAttached(pinConfig.pin)) {
 			return false;
 		}
 		uint8_t gpio = pinConfig.pin;
-		gpioWrite(gpio, true);
+		gpioBitWrite(gpio, true);
 		_pins[gpio] = pinConfig;
 		return true;
 	}
 
 	bool detach(uint8_t gpio) {
-		if (pinNotSupported(gpio)) return false;
-		gpioWrite(gpio, false);
+		if (pinNotSupported(gpio))
+			return false;
+		gpioBitWrite(gpio, false);
 		_pins[gpio] = PinModeConf();
 		return true;
 	};
 
-	bool attach(const PinModeConf *pinArray, uint8_t arrayElementCount) override {
+	bool attach(const PinModeConf *pinArray, uint8_t arrayElementCount) {
 		for (int i = 0; i < arrayElementCount; i++) {
 			PinModeConf pinConfig = pinArray[i];
-			attach( pinConfig );
+			attach(pinConfig);
 		}
 		return true;
 	};
 
-	bool detach(const PinModeConf *pinArray, uint8_t arrayElementCount) override {
+	bool detach(const PinModeConf *pinArray, uint8_t arrayElementCount) {
 		for (int i = 0; i < arrayElementCount; i++) {
 			detach(pinArray[i].pin);
 		}
@@ -189,24 +189,25 @@ class PinManager : public IPinManager {
 	};
 
 	bool detach(const uint8_t *pinArray, uint8_t arrayElementCount) override {
-		uint8_t pins[arrayElementCount];
-		for (int i = 0; i < arrayElementCount; i++){
+		for (int i = 0; i < arrayElementCount; i++) {
 			detach(pinArray[i]);
 		}
 		return true;
 	};
 
 	bool isPinAttached(uint8_t gpio, PinType tag = PinType::None) override {
-		if ( pinNotSupported(gpio) ||
+		if (pinNotSupported(gpio) ||
 			((tag != PinType::None) && (_pins[gpio].type != tag)))
 			return false;
+		if (!isPinOK(gpio))
+			return true;
 		uint8_t pinLocation = gpio >> 3;
 		uint8_t pinIndex = gpio - (pinLocation << 3);
 		return bitRead(pinAlloc[pinLocation], pinIndex);
 	};
 	bool isPinOK(uint8_t gpio) { return !_pins[gpio].isBroken; };
 	PinType getPinType(uint8_t gpio) override {
-		if ( pinNotSupported(gpio) || !isPinOK(gpio) )
+		if (pinNotSupported(gpio) || !isPinOK(gpio))
 			return PinType::None;
 		return _pins[gpio].type;
 	};
