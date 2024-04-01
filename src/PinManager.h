@@ -48,7 +48,7 @@ bool is_VSPI(PinType tag) {
 	return (tag == PinType::VSPI_MISO || tag == PinType::VSPI_MOSI ||
 			tag == PinType::VSPI_CLK || tag == PinType::VSPI_CS);
 }
-bool isSPI(PinType tag) { return (is_HSPI(tag) || is_HSPI(tag)); }
+bool isSPI(PinType tag) { return (is_HSPI(tag) || is_VSPI(tag)); }
 
 struct OutputPin {
 	bool isPWM = false;
