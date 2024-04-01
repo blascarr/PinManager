@@ -145,7 +145,7 @@ class PinManager : public IPinManager {
 		}
 	}
 	uint8_t getGPIOInList(uint8_t gpio) { return (gpio + 1); };
-	uint8_t getPin(uint8_t gpio) { return _pins[getGPIOInList(gpio)].pin; }
+	uint8_t getPin(uint8_t gpio) { return _pins[gpio].pin; }
 	bool attach(uint8_t gpio, bool output, PinType tag) {
 		if (!isPinOK(gpio) || (gpio >= BoardConfig::NUM_PINS) || isI2C(tag) ||
 			isSPI(tag)) {
@@ -157,7 +157,7 @@ class PinManager : public IPinManager {
 		uint8_t pinLocation = gpio >> 3;
 		uint8_t pinIndex = gpio - 8 * pinLocation;
 		bitWrite(pinAlloc[pinLocation], pinIndex, true);
-		_pins[getGPIOInList(gpio)] = {gpio, OutputPin(false), tag};
+		_pins[gpio] = {gpio, OutputPin(false), tag};
 		return true;
 	};
 
@@ -203,7 +203,7 @@ class PinManager : public IPinManager {
 			uint8_t by = gpio >> 3;
 			uint8_t bi = gpio - 8 * by;
 			bitWrite(pinAlloc[by], bi, true);
-			_pins[getGPIOInList(gpio)] = {gpio, OutputPin(false), tag};
+			_pins[gpio] = {gpio, OutputPin(false), tag};
 		}
 		return true;
 	};
@@ -214,14 +214,14 @@ class PinManager : public IPinManager {
 		if (!isPinOK(gpio))
 			return false;
 
-		if ((_pins[getGPIOInList(gpio)].type != PinType::None)) {
+		if ((_pins[gpio].type != PinType::None)) {
 			return false;
 		}
 
 		uint8_t pinLocation = gpio >> 3;
 		uint8_t pinIndex = gpio - 8 * pinLocation;
 		bitWrite(pinAlloc[pinLocation], pinIndex, false);
-		_pins[getGPIOInList(gpio)] = PinMode();
+		_pins[gpio] = PinMode();
 		return true;
 	};
 	bool detach(const uint8_t *pinArray, uint8_t arrayElementCount,
@@ -272,7 +272,7 @@ class PinManager : public IPinManager {
 	bool isPinAttached(uint8_t gpio, PinType tag = PinType::None) override {
 		if (!isPinOK(gpio))
 			return true;
-		if ((tag != PinType::None) && (_pins[getGPIOInList(gpio)].type != tag))
+		if ((tag != PinType::None) && (_pins[gpio].type != tag))
 			return false;
 		if (gpio >= BoardConfig::NUM_PINS)
 			return false; // catch error case, to avoid array out-of-bounds
@@ -281,14 +281,14 @@ class PinManager : public IPinManager {
 		uint8_t pinIndex = gpio - (pinLocation << 3);
 		return bitRead(pinAlloc[pinLocation], pinIndex);
 	};
-	bool isPinOK(uint8_t gpio) { return !_pins[getGPIOInList(gpio)].isBroken; };
+	bool isPinOK(uint8_t gpio) { return !_pins[gpio].isBroken; };
 	PinType getPinType(uint8_t gpio) override {
 		if (gpio >= BoardConfig::NUM_PINS)
 			return PinType::None; // catch error case, to avoid array
 								  // out-of-bounds
 		if (!isPinOK(gpio))
 			return PinType::None;
-		return _pins[getGPIOInList(gpio)].type;
+		return _pins[gpio].type;
 	};
 };
 
