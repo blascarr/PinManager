@@ -143,7 +143,8 @@ class PinManager : public IPinManager {
 	PinManager() : I2CAllocCount(0), SPIAllocCount(0) {
 		for (size_t i = 0; i < BoardConfig::NUM_PINS; ++i) {
 			const auto &pinConfig = BoardConfig::PINOUT[i];
-			_pins[i] = pinConfig;
+			// _pins[i] = pinConfig;
+			attach(pinConfig);
 		}
 	}
 	uint8_t getGPIOInList(uint8_t gpio) { return (gpio + 1); };
