@@ -72,7 +72,7 @@ bool PinManager<BoardConfig>::attach(const PinMode *pinArray,
 	if (shouldFail) {
 		return false;
 	}
-	if (tisI2C(tag))
+	if (isI2C(tag))
 		i2cAllocCount++;
 	if (isSPI(tag))
 		spiAllocCount++;
