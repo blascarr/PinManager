@@ -146,11 +146,11 @@ class PinManager : public IPinManager {
 
   public:
 	PinManager() : I2CAllocCount(0), SPIAllocCount(0) {
-		memset(pinAlloc, 0, sizeof(pinAlloc));
 		for (size_t i = 0; i < BoardConfig::NUM_PINS; ++i) {
 			const auto &pinConfig = BoardConfig::PINOUT[i];
 			attach(pinConfig);
 		}
+		memset(pinAlloc, 0, sizeof(pinAlloc));
 	}
 
 	uint8_t getPin(uint8_t gpio) { return _pins[gpio].pin; }
