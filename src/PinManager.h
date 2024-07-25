@@ -133,25 +133,28 @@ class PinManager : public IPinManager {
 							   // but keep track of allocations
 	};
 
-	void gpioBitWrite(uint8_t gpio, bool status = false){
+	void gpioBitWrite(uint8_t gpio, bool status = false) {
 		uint8_t pinLocation = gpio >> 3;
 		uint8_t pinIndex = gpio - 8 * pinLocation;
 		bitWrite(pinAlloc[pinLocation], pinIndex, status);
 	}
-	bool pinNotSupported(uint8_t gpio){
+	bool pinNotSupported(uint8_t gpio) {
 		if (gpio >= BoardConfig::NUM_PINS)
 			return true;
 		return false;
 	}
+
   public:
 	PinManager() : I2CAllocCount(0), SPIAllocCount(0) {
+		memset(pinAlloc, 0, sizeof(pinAlloc));
 		for (size_t i = 0; i < BoardConfig::NUM_PINS; ++i) {
 			const auto &pinConfig = BoardConfig::PINOUT[i];
 			attach(pinConfig);
 		}
 	}
-	uint8_t getGPIOInList(uint8_t gpio) { return (gpio + 1); };
+
 	uint8_t getPin(uint8_t gpio) { return _pins[gpio].pin; }
+	PinModeConf getGPIO(uint8_t gpio) { return _pins[gpio]; }
 	bool attach(PinModeConf pinConfig) {
 		if (isPinAttached(pinConfig.pin)) {
 			return false;
