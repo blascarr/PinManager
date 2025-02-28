@@ -162,7 +162,7 @@ class PinManager : public IPinManager {
 		}
 		gpioBitWrite(gpio, true);
 		PinModeConf pinConfig = PinModeConf();
-		uint8_t gpio = pinConfig.pin;
+		gpio = pinConfig.pin;
 		_pins[gpio] = pinConfig;
 		return true;
 	}
