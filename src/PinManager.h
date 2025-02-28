@@ -75,14 +75,14 @@ struct PinMode {
 	bool isADC = false;
 	bool isDAC = false;
 	PinType type;
-	PinMode() : pin(0), config{.input = InputPin()}, type(PinType::None){};
+	PinMode() : pin(0), config{.input = InputPin()}, type(PinType::None) {};
 	PinMode(uint8_t pin, OutputPin isOutput, PinType type,
 			bool isBroken = false)
 		: pin(pin), config{.output = isOutput}, mode(GPIOMode::Output),
-		  isBroken(isBroken), type(type){};
+		  isBroken(isBroken), type(type) {};
 	PinMode(uint8_t pin, InputPin isInput, PinType type, bool isBroken = false)
 		: pin(pin), config{.input = isInput}, mode(GPIOMode::Input),
-		  isBroken(isBroken), type(type){};
+		  isBroken(isBroken), type(type) {};
 	void setBrokenPin(bool isBroken) { isBroken = isBroken; };
 	void setGPIOMode(GPIOMode PIOMode) { mode = PIOMode; };
 };
@@ -91,7 +91,7 @@ struct ESP_PinMode : public PinMode {
 	bool canDeepSleep = false;
 	bool canUseWithWiFi = true;
 	bool isTouchGPIO = false;
-	ESP_PinMode() : PinMode(){};
+	ESP_PinMode() : PinMode() {};
 	ESP_PinMode(uint8_t pin, OutputPin isOutput, PinType type,
 				bool canDeepSleep = false, bool canUseWithWiFi = true,
 				bool isBroken = false)
@@ -155,6 +155,18 @@ class PinManager : public IPinManager {
 
 	uint8_t getPin(uint8_t gpio) { return _pins[gpio].pin; }
 	PinModeConf getGPIO(uint8_t gpio) { return _pins[gpio]; }
+
+	bool attach(uint8_t gpio) {
+		if (isPinAttached(gpio) || pinNotSupported(gpio)) {
+			return false;
+		}
+		gpioBitWrite(gpio, true);
+		PinModeConf pinConfig = PinModeConf();
+		uint8_t gpio = pinConfig.pin;
+		_pins[gpio] = pinConfig;
+		return true;
+	}
+
 	bool attach(PinModeConf pinConfig) {
 		if (isPinAttached(pinConfig.pin)) {
 			return false;
