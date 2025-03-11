@@ -155,6 +155,14 @@ class PinManager : public IPinManager {
 
 	uint8_t getPin(uint8_t gpio) { return _pins[gpio].pin; }
 	PinModeConf getGPIO(uint8_t gpio) { return _pins[gpio]; }
+	void setGPIOMode(uint8_t pin, GPIOMode PIOMode) {
+		if (PIOMode == GPIOMode::Input) {
+			pinMode(pin, INPUT);
+		}
+		if (PIOMode == GPIOMode::Output) {
+			pinMode(pin, OUTPUT);
+		}
+	}
 
 	bool attach(uint8_t gpio) {
 		if (isPinAttached(gpio) || pinNotSupported(gpio)) {
@@ -162,8 +170,10 @@ class PinManager : public IPinManager {
 		}
 		gpioBitWrite(gpio, true);
 		PinModeConf pinConfig = PinModeConf();
-		gpio = pinConfig.pin;
+		pinConfig.pin = gpio;
 		_pins[gpio] = pinConfig;
+		// By default is OUTPUT
+		setGPIOMode(pinConfig.pin, GPIOMode::Output);
 		return true;
 	}
 
@@ -174,6 +184,7 @@ class PinManager : public IPinManager {
 		uint8_t gpio = pinConfig.pin;
 		gpioBitWrite(gpio, true);
 		_pins[gpio] = pinConfig;
+		setGPIOMode(pinConfig.pin, pinConfig.mode);
 		return true;
 	}
 
