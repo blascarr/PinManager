@@ -108,6 +108,12 @@ struct ESP_PinMode : public PinMode {
 	}
 };
 
+struct DefaultBoardConfig {
+	static constexpr uint8_t NUM_PINS = 10;
+	static ESP_PinMode PINOUT[NUM_PINS];
+	static constexpr uint8_t INITIAL_PINS = 0;
+};
+
 class IPinManager {
   public:
 	virtual ~IPinManager() {}
@@ -117,7 +123,8 @@ class IPinManager {
 	virtual bool isPinOK(uint8_t gpio) = 0;
 	virtual PinType getPinType(uint8_t gpio) = 0;
 };
-template <typename BoardConfig, typename PinModeConf = PinMode>
+template <typename BoardConfig = DefaultBoardConfig,
+		  typename PinModeConf = PinMode>
 
 class PinManager : public IPinManager {
   protected:
@@ -146,9 +153,11 @@ class PinManager : public IPinManager {
 
   public:
 	PinManager() : I2CAllocCount(0), SPIAllocCount(0) {
-		for (size_t i = 0; i < BoardConfig::NUM_PINS; ++i) {
+		for (size_t i = 0; i < BoardConfig::INITIAL_PINS; ++i) {
 			const auto &pinConfig = BoardConfig::PINOUT[i];
-			attach(pinConfig);
+			if (!pinConfig.isBroken) {
+				attach(pinConfig);
+			}
 		}
 		memset(pinAlloc, 0, sizeof(pinAlloc));
 	}
