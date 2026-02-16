@@ -117,8 +117,8 @@ struct DefaultBoardConfig {
 class IPinManager {
   public:
 	virtual ~IPinManager() {}
-	virtual bool detach(const uint8_t *pinArray, uint8_t arrayElementCount);
-	virtual bool detach(uint8_t gpio);
+	virtual bool detach(const uint8_t *pinArray, uint8_t arrayElementCount) = 0;
+	virtual bool detach(uint8_t gpio) = 0;
 	virtual bool isPinAttached(uint8_t gpio, PinType tag = PinType::None) = 0;
 	virtual bool isPinOK(uint8_t gpio) = 0;
 	virtual PinType getPinType(uint8_t gpio) = 0;
